@@ -2,10 +2,11 @@
  * PLCStandardLib_3_1.h
  * Аналог Standard.lib из CODESYS 2.3 для Arduino и т.п.
  * См. справку CODESYS 2.3 по работе с блоками таймеров и триггеров.
+ * Author: Chupakabra303
  */
 
-#ifndef PLCSTANDARDLIB_3_1_H_
-#define PLCSTANDARDLIB_3_1_H_
+#ifndef PLCSTANDARDLIB_H_
+#define PLCSTANDARDLIB_H_
 
 #if ARDUINO >= 100
 #include <Arduino.h>
@@ -25,11 +26,10 @@ extern unsigned long VAR_GLOBAL_TIME;
 class TON {
   public:
     TON(unsigned long PT = 0) {
-      TON::PT = PT;
+      this->PT = PT;
     }
-    bool Run(bool IN) {
-      TON::IN = IN;
-      if (!TON::IN) {
+    bool operator()() {
+      if (!IN) {
         Q = false;
         ET = 0;
         _M = false;
@@ -47,6 +47,15 @@ class TON {
       }
       return Q;
     }
+    bool operator()(bool IN) {
+      this->IN = IN;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
+      return Q;
+    }
     bool Q = false; // выходная переменная
     bool IN = false; // входная переменная
     unsigned long PT; // входная переменная
@@ -60,11 +69,10 @@ class TON {
 class TOF {
   public:
     TOF(unsigned long PT = 0) {
-      TOF::PT = PT;
+      this->PT = PT;
     }
-    bool Run(bool IN) {
-      TOF::IN = IN;
-      if (TOF::IN) {
+    bool operator()() {
+      if (IN) {
         Q = true;
         ET = 0;
         _M = true;
@@ -80,6 +88,15 @@ class TOF {
         if (ET >= PT)
           Q = false;
       }
+      return Q;
+    }
+    bool operator()(bool IN) {
+      this->IN = IN;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
       return Q;
     }
     bool Q = false; // выходная переменная
@@ -101,10 +118,18 @@ class R_TRIG { // детектор фронта сигнала
     R_TRIG(bool M = true) {
       _M = M;
     }
-    bool Run(bool CLK) {
-      R_TRIG::CLK = CLK;
-      Q = R_TRIG::CLK && !_M;
-      _M = R_TRIG::CLK;
+    bool operator()() {
+      Q = CLK && !_M;
+      _M = CLK;
+      return Q;
+    }
+    bool operator()(bool CLK) {
+      this->CLK = CLK;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
       return Q;
     }
     bool CLK = false; // входная переменная
@@ -119,10 +144,18 @@ class F_TRIG { // детектор спада сигнала
     F_TRIG(bool M = true) { // Специальная инициализация начального состояния. Если M == true, подавляется событие при первом вызове Run, когда CLK == false. Поведение аналогично CODESYS 2.3
       _M = M;
     }
-    bool Run(bool CLK) {
-      F_TRIG::CLK = CLK;
-      Q = !F_TRIG::CLK && !_M;
-      _M = !F_TRIG::CLK;
+    bool operator()() {
+      Q = !CLK && !_M;
+      _M = !CLK;
+      return Q;
+    }
+    bool operator()(bool CLK) {
+      this->CLK = CLK;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
       return Q;
     }
     bool CLK = false; // входная переменная
@@ -134,14 +167,18 @@ class F_TRIG { // детектор спада сигнала
 // ------------------- RS_TRIG -------------------
 class RS_TRIG {
   public:
-    bool Run(bool SET, bool RESET) {
-      RS_TRIG::SET = SET;
-      RS_TRIG::RESET = RESET;
-      Q = Run();
+    bool operator()() {
+      Q = !RESET && (SET || Q);
       return Q;
     }
-    bool Run() {
-      Q = !RESET && (SET || Q);
+    bool operator()(bool SET, bool RESET) {
+      this->SET = SET;
+      this->RESET = RESET;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
       return Q;
     }
     bool SET = false; // установка триггера
@@ -152,14 +189,18 @@ class RS_TRIG {
 // ------------------- SR_TRIG -------------------
 class SR_TRIG {
   public:
-    bool Run(bool SET, bool RESET) {
-      SR_TRIG::SET = SET;
-      SR_TRIG::RESET = RESET;
-      Q = Run();
+    bool operator()() {
+      Q = SET || (!RESET && Q);
       return Q;
     }
-    bool Run() {
-      Q = SET || (!RESET && Q);
+    bool operator()(bool SET, bool RESET) {
+      this->SET = SET;
+      this->RESET = RESET;
+      operator()();
+      return Q;
+    }
+    template <typename... T> bool Run(T... vals) {
+      operator()(vals...);
       return Q;
     }
     bool SET = false; // установка триггера
