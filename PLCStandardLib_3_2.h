@@ -13,7 +13,8 @@
 #else
 #include <WProgram.h>
 #endif
-/* Расчет глобальной переменной VAR_GLOBAL_TIME вынесен из библиотеки. Просто добавьте VAR_GLOBAL_TIME = millis(); в начало loop(). Централизованное обновление VAR_GLOBAL_TIME требуется для синхронизации всех таймеров */
+/* Расчет глобальной переменной VAR_GLOBAL_TIME вынесен из библиотеки. Просто добавьте VAR_GLOBAL_TIME = millis(); в начало loop().
+Централизованное обновление VAR_GLOBAL_TIME требуется для синхронизации всех таймеров. */
 //#ifdef VAR_GLOBAL_TIME
 //extern unsigned long VAR_GLOBAL_TIME;
 //#else
